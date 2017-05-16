@@ -152,7 +152,7 @@ Logback pattern with which events will be formatted.  
 
 #### 2.3.4 Email Notification Configuration:
 
-- port: Standard SMTP port
+- port: Please add the in-use standard SMTP port currently referred from internal servers to access mail server. For example 25 or 465 (with a secure SSL) or 587
 
 - username: Username of the Email
 

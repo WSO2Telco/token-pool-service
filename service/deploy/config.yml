@@ -38,7 +38,7 @@ logging:
       archivedFileCount: 5
       timeZone: UTC
 tslMailConfig:
-  port: 587 #587
+  port: 587 # confirm & configure persently used smtp port to access mail server from internal servers. eg:- 25 or 587
   username: 
   password: 
   isStarttlsEnable: true

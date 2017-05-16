@@ -143,8 +143,9 @@ public class TokenReGenarator {
 		HttpsURLConnection connection = null;
 		InputStream is = null;
 		BufferedReader br = null;
+		DataOutputStream wr = null;
 
-		log.debug("url : " + tokenurl + " | urlParameters : " + urlParameters + " | authheader : " + authheader);
+		log.debug("Token regeneration requestString : tokenUrl=" + tokenurl + " | urlParameters= " + urlParameters + " | authheader= " + authheader);
 
 		// parameter validations
 		if ((tokenurl == null || tokenurl.length() <= 0)) {
@@ -183,11 +184,12 @@ public class TokenReGenarator {
 			connection.setUseCaches(false);
 
 
-			DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+			wr = new DataOutputStream(connection.getOutputStream());
 			wr.write(postData);
 			wr.flush();
-			wr.close();
-
+			
+			log.debug("Token regeneration responseCode: "+ connection.getResponseCode());
+			
 			// filter out invalid http codes
 			if ((connection.getResponseCode() == Status.OK.getStatusCode())
 					|| (connection.getResponseCode() == Status.CREATED.getStatusCode())) {
@@ -201,11 +203,12 @@ public class TokenReGenarator {
 			while ((output = br.readLine()) != null) {
 				retStr.append(output);
 			}
+			
+			log.debug("Token regeneration responseString: "+ retStr.toString());
 		}
 		catch(ConnectException e)
 		{
 			log.error("TokenReGenarator , makerequest(), ", e);
-
 			throw new TokenException(TokenError.CONNECTION_LOSS);
 		}
 
@@ -214,23 +217,18 @@ public class TokenReGenarator {
 			throw new TokenException(TokenError.TOKEN_REGENERATE_FAIL);
 		} finally {
 			try {
-				if(br!=null){
-
+				if(br!=null)
 					br.close();
-
-				}
+				if(wr!=null)
+					wr.close();
 
 			} catch (IOException e) {
 
-
 			}
-
 			if (connection != null) {
 				connection.disconnect();
 			}
 		}
-
-	
 		return retStr.toString();
 	}
 
