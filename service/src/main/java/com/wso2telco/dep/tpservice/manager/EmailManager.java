@@ -82,7 +82,7 @@ public  class EmailManager {
 	} 
 	
 	
-    private static Logger log = LoggerFactory.getLogger(TokenManager.class);
+    private static Logger log = LoggerFactory.getLogger(EmailManager.class);
     
     /**
      * this will send Connection fail  mail to pre-configured recipients 
@@ -113,8 +113,6 @@ public  class EmailManager {
 			message.setRecipients(Message.RecipientType.TO, senderList.toArray( new InternetAddress [senderList.size()]));
 			message.setSubject(subject);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			PrintStream ps = new PrintStream(baos);
-			e.printStackTrace(ps);
 			String content = new String(baos.toByteArray(), StandardCharsets.UTF_8);
 			
 			message.setText(msg
@@ -122,11 +120,9 @@ public  class EmailManager {
 
 			Transport.send(message);
 
-			System.out.println("Done");
-
 		} catch (MessagingException eMessagingException) {
 
-    	    log.error("Error occoured when sent emails "+GenaralError.INTERNAL_SERVER_ERROR);
+    	    log.error("Error occoured when sending emails "+GenaralError.INTERNAL_SERVER_ERROR,eMessagingException);
 			return;
 		}
 
