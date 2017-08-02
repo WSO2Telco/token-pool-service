@@ -88,7 +88,7 @@ CREATE TABLE `tsxwho` (
   `ownerid` varchar(200) NOT NULL,
   `tokenurl` varchar(400) NOT NULL,
   `defaultconnectionresettime` bigint(20) NOT NULL,
-  `isvalid` BIT(1) NOT NULL,
+  `isvalid` int(11) NOT NULL,
   `createddate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `uc` int(11) DEFAULT '0',
   PRIMARY KEY (`tsxwhodid`),

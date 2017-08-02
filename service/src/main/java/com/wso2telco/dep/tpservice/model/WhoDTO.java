@@ -36,7 +36,7 @@ public class WhoDTO implements Serializable {
 	
 	private long defaultConnectionRestTime;
 	
-	private boolean valid;
+	private int valid;
 	
 	private long createdDate;
 	
@@ -87,11 +87,11 @@ public class WhoDTO implements Serializable {
 		this.defaultConnectionRestTime = defaultConnectionRestTime;
 	}
 
-	public boolean getValid() {
+	public int getValid() {
 		return valid;
 	}
 
-	public void setValid(boolean valid) {
+	public void setValid(int valid) {
 		this.valid = valid;
 	}
 
