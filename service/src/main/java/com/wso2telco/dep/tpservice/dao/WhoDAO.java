@@ -17,14 +17,19 @@
 package com.wso2telco.dep.tpservice.dao;
 
 import com.wso2telco.dep.tpservice.model.EmailDTO;
+import com.wso2telco.dep.tpservice.model.TokenDTO;
 import com.wso2telco.dep.tpservice.model.WhoDTO;
 import com.wso2telco.dep.tpservice.util.Constants.Tables;
 import com.wso2telco.dep.tpservice.util.exception.BusinessException;
 import com.wso2telco.dep.tpservice.util.exception.GenaralError;
 import com.wso2telco.dep.tpservice.util.exception.TokenException;
 import com.wso2telco.dep.tpservice.util.exception.TokenException.TokenError;
+
+import org.apache.commons.lang3.BooleanUtils;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.sqlobject.Bind;
+import org.skife.jdbi.v2.sqlobject.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,21 +43,19 @@ public class WhoDAO {
 
 	private static Logger log = LoggerFactory.getLogger(WhoDAO.class);
 
-
-
 	public ArrayList<WhoDTO> getAllOwners() throws SQLException {
 		ArrayList<WhoDTO> ownersList = new ArrayList<WhoDTO>();
 		DBI dbi = JDBIUtil.getInstance();
 		Handle h = dbi.open();
 		try {
-			
+
 			StringBuilder sb = new StringBuilder();
 			sb.append("SELECT * FROM ").append(Tables.TABLE_TSXWHO.toString()).append(" ");
 			sb.append("WHERE isvalid = 1 ");
 			sb.append("ORDER BY ownerid ");
-	
+
 			List<Map<String, Object>> resultSet = h.select(sb.toString());
-	
+
 			for (int i = 0; i < resultSet.size(); i++) {
 				WhoDTO whoDTO = getWhoDTOFromResultsMap(resultSet.get(i));
 				ownersList.add(whoDTO);
@@ -70,16 +73,16 @@ public class WhoDAO {
 		WhoDTO whoDTO = null;
 		if (resultsMap != null) {
 			whoDTO = new WhoDTO();
-			int id = (Integer)resultsMap.get("tsxwhodid");
-			String ownerId = (String)resultsMap.get("ownerid");
-			String tokenUrl = (String)resultsMap.get("tokenurl");
-			long defaultConnectionResetTime = (Long)resultsMap.get("defaultconnectionresettime");
-			boolean isValid = (Boolean)resultsMap.get("isvalid");
-			Timestamp createdDate = (Timestamp)resultsMap.get("createddate");
-			int uc = (Integer)resultsMap.get("uc");
-            int retryAttmpt = (Integer)resultsMap.get("reattmptcount");
-            int retryMax = (Integer)resultsMap.get("retrymax");
-            int retryDelay = (Integer) resultsMap.get("retrydelay");
+			int id = (Integer) resultsMap.get("tsxwhodid");
+			String ownerId = (String) resultsMap.get("ownerid");
+			String tokenUrl = (String) resultsMap.get("tokenurl");
+			long defaultConnectionResetTime = (Long) resultsMap.get("defaultconnectionresettime");
+			int isValid = (Integer) resultsMap.get("isvalid");
+			Timestamp createdDate = (Timestamp) resultsMap.get("createddate");
+			int uc = (Integer) resultsMap.get("uc");
+			int retryAttmpt = (Integer) resultsMap.get("reattmptcount");
+			int retryMax = (Integer) resultsMap.get("retrymax");
+			int retryDelay = (Integer) resultsMap.get("retrydelay");
 
 			whoDTO.setId(id);
 			whoDTO.setOwnerId(ownerId);
@@ -92,16 +95,16 @@ public class WhoDAO {
 			whoDTO.setMaxRetryCoutn(retryMax);
 			whoDTO.setretryDelay(retryDelay);
 		} else {
-			//resultsMap is null
+			// resultsMap is null
 		}
 		return whoDTO;
 	}
 
 	public int getRetryAttempt(final String ownerid) {
-	return  0;
+		return 0;
 	}
 
-	public  void incrimentRetryAttempt(final int ownerid,final  int retryAttempt ) {
+	public void incrimentRetryAttempt(final int ownerid, final int retryAttempt) {
 		DBI dbi = JDBIUtil.getInstance();
 
 		PersistableWho persistableWho = dbi.open(PersistableWho.class);
@@ -114,17 +117,15 @@ public class WhoDAO {
 		WhoDTO returnWhoDto = null;
 		DBI dbi = JDBIUtil.getInstance();
 		Handle h = dbi.open();
-		
+
 		try {
 
 			StringBuilder sb = new StringBuilder();
 			sb.append("SELECT * FROM ").append(Tables.TABLE_TSXWHO.toString()).append(" ");
 			sb.append("WHERE ownerid = :ownerid");
 
-			Map<String, Object> resultOwner = h.createQuery(sb.toString())
-					.bind("ownerid", ownerid)
-					.first();
-			if (resultOwner==null){
+			Map<String, Object> resultOwner = h.createQuery(sb.toString()).bind("ownerid", ownerid).first();
+			if (resultOwner == null) {
 				throw new TokenException(TokenError.NO_VALID_WHO);
 			}
 			returnWhoDto = getWhoDTOFromResultsMap(resultOwner);
@@ -136,31 +137,38 @@ public class WhoDAO {
 		}
 		return returnWhoDto;
 	}
+
+	public List<EmailDTO> getEmailAddress(final Integer tsxwhodid) throws BusinessException {
+
+		List<EmailDTO> emailList = null;
+		DBI dbi = JDBIUtil.getInstance();
+		try {
+
+			PersistableWho h = dbi.open(PersistableWho.class);
+			emailList = h.loadSenderList(tsxwhodid);
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+
+			throw new TokenException(GenaralError.INTERNAL_SERVER_ERROR);
+		}
+
+		return emailList;
+	}
+
+	public void addOwnerWithTokens(WhoDTO whoDto , ArrayList<TokenDTO> tokenList) throws SQLException {
+		DBI dbi = JDBIUtil.getInstance();
+		try {
+			OwnerHandler ownerHandler = dbi.onDemand(OwnerHandler.class);
+			whoDto = ownerHandler.createWhoAndTokens(whoDto, tokenList);
+			 
+		} catch (Exception e) {
+			log.error("getAllOwners() failed ", e);
+			e.printStackTrace();
+			throw new SQLException("Could not get all valid owners");
+		}
+	}
 	
 	
-	
-	 public List<EmailDTO> getEmailAddress(final Integer tsxwhodid) throws BusinessException{
 
-	        List<EmailDTO> emailList  = null;
-	        DBI dbi = JDBIUtil.getInstance();
-	        try {
-	        	
-	        	PersistableWho h = dbi.open(PersistableWho.class);
-	        	emailList = h.loadSenderList(tsxwhodid);
-	        	
-
-	        } catch(Exception ex)  {
-	        	ex.printStackTrace();
-	        	
-	           throw new TokenException(GenaralError.INTERNAL_SERVER_ERROR);
-	        }
-
-	        return emailList;
-	    }
-	 
 }
-	
-	
-	
-	
-

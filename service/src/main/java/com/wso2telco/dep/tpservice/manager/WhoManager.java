@@ -18,6 +18,7 @@ package com.wso2telco.dep.tpservice.manager;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.wso2telco.dep.tpservice.dao.TokenDAO;
 import com.wso2telco.dep.tpservice.dao.WhoDAO;
+import com.wso2telco.dep.tpservice.model.AddNewSpDto;
 import com.wso2telco.dep.tpservice.model.TokenDTO;
 import com.wso2telco.dep.tpservice.model.WhoDTO;
 import com.wso2telco.dep.tpservice.util.exception.BusinessException;
@@ -111,5 +113,25 @@ public class WhoManager {
 		log.debug(owner.toString());
 		return owner;
 	}
+
+	public void addOwnerWithTokens(AddNewSpDto addNewSpDto) throws SQLException {
+		WhoDTO whoDto = new WhoDTO();
+		WhoDAO whoDAO = new WhoDAO();
+		if(addNewSpDto!=null){
+			whoDto.setOwnerId(addNewSpDto.getOwnerId());
+			whoDto.setTokenUrl(addNewSpDto.getTokenUrl());
+			whoDto.setDefaultConnectionRestTime(addNewSpDto.getDefaultconnectionresettime());
+			whoDto.setRetryAttmpt(addNewSpDto.getRetryAttmpt());
+			whoDto.setMaxRetryCoutn(addNewSpDto.getRetrymax());
+			whoDto.setretryDelay(addNewSpDto.getRetrydelay());
+			whoDto.setId(1);
+			ArrayList<TokenDTO> tokenList = addNewSpDto.getSpTokenList();
+			whoDAO.addOwnerWithTokens(whoDto, tokenList);
+			
+		}
+		
+	}
+	
+
 
 }

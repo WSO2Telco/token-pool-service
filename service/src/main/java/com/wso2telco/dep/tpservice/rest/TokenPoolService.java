@@ -16,10 +16,16 @@
 
 package com.wso2telco.dep.tpservice.rest;
 
+import java.sql.SQLException;
+import java.util.Iterator;
+
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
@@ -28,11 +34,15 @@ import org.slf4j.LoggerFactory;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
+import com.wso2telco.dep.tpservice.manager.WhoManager;
+import com.wso2telco.dep.tpservice.model.AddNewSpDto;
 import com.wso2telco.dep.tpservice.model.TokenDTO;
+import com.wso2telco.dep.tpservice.model.WhoDTO;
 import com.wso2telco.dep.tpservice.pool.PoolFactory;
 import com.wso2telco.dep.tpservice.pool.TokenControllable;
 import com.wso2telco.dep.tpservice.pool.TokenPool;
 import com.wso2telco.dep.tpservice.util.exception.TokenException;
+import com.wso2telco.dep.tpservice.util.exception.WhoException;
 
 @Api(value = "/tokenservice", description = "This service provide a rest service for providing a valid token")
 @Path("/tokenservice")
@@ -119,6 +129,30 @@ public class TokenPoolService {
 					.entity(e.getErrorType().getCode() + ":" + e.getErrorType().getMessage()).build();
 		}
 	}
+	
+	
+	@POST
+	@Path("/refresh/{ownerId}/{tokenID}")
+	@ApiOperation(value = "Add New Token to new Owner Id", notes = "Token pool will store the new token for the new owner ", response = Response.class)
+	public Response add(@ApiParam(value = "Owner Id to  Add", required = true) @PathParam("ownerId") String ownerId,
+			@ApiParam(value = "Token to Add", required = true) @PathParam("tokenID") String tokenID) {
+		try {
+			log.debug(" calling add token request for :" + ownerId + " tokenID:" + tokenID);
+			TokenControllable tokenPoolImpl = PoolFactory.getInstance()
+														.getManagager()
+														.getOwnerController(ownerId)
+														.getTokenController(tokenID);
+			TokenDTO obj = tokenPoolImpl.refreshToken(tokenID);
+			return Response.status(Response.Status.OK).entity(obj.getAccessToken()).build();
+
+		} catch (TokenException e) {
+			// TODO Auto-generated catch block
+			log.error("", e);
+			return Response.status(Response.Status.BAD_REQUEST)
+					.entity(e.getErrorType().getCode() + ":" + e.getErrorType().getMessage()).build();
+			// e.printStackTrace();
+		}
+	}
 
 	/*@DELETE
 	@Path("/{ownerID}/{tokenID}")
@@ -135,4 +169,20 @@ public class TokenPoolService {
 		}
 
 	}*/
+	
+	@POST
+	@Path("/add/sp")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Add New Mig Sp ", notes = "Token pool will store the new Mig sp ")
+	public Response addMigSp(AddNewSpDto addNewSpDto ) {
+		
+		WhoManager whoManager = new WhoManager();
+		try {
+			whoManager.addOwnerWithTokens(addNewSpDto);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return Response.status(Response.Status.EXPECTATION_FAILED).entity("Error").build();
+		}
+			return Response.status(Response.Status.CREATED).entity("Ok").build();
+	}
 }
